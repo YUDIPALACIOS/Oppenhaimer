@@ -16,7 +16,7 @@
   (let ((match (regexp-match regex line)))
     (if match
         (cons (car match) color)
-        (cons (substring line 0 1) "#000000"))))
+        (cons (substring line 0 1) color))))
 
 ; Función principal para tokenizar una línea de código
 (define (tokenize line regex-list)
