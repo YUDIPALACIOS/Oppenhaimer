@@ -22,10 +22,10 @@
 (define (tokenize line regex-list)
   (define (loop line tokens)
     (if (regexp-match? (car regex-list) line)
-        (reverse tokens)
+        (reverse tokens))
         (let* ((token (apply match-token regex-list line (list (generate-color))))
                (next-line (substring line (if token (string-length (car token)) 1))))
-          (loop next-line (cons token tokens))))))
+          (loop next-line (cons token tokens)))))
 
 ; Función auxiliar para generar HTML con la información de los tokens
 (define (generate-html tokens regex-list)
@@ -46,22 +46,22 @@
                 "\n")
    "\n</body>\n</html>"))
 
+; Función auxiliar para leer un archivo y devolver sus líneas
+(define (read-lines file)
+  (file->lines file))
+
 ; Función principal para resaltar léxico
 (define (resaltador regex-file source-file output-file)
-  (define (read-regex-file file)
-    (file->lines file))
-
-  (define (read-source-file file)
-    (file->lines file))
-
-  (define regex-list (read-regex-file regex-file))
-  (define source-code (read-source-file source-file))
-  (define tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code)))
+(define regex-list (read-lines regex-file)))
+(define source-code (read-lines source-file))
+(define tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code)))
 
   ; Escribir el HTML generado en el archivo de salida
   (with-output-to-file output-file
     (lambda ()
-      (display (generate-html tokens regex-list)))))
-  
+      (display (generate-html tokens regex-list))))
+
 ; Llamar a la función principal con los archivos de entrada y salida
 (resaltador "expresiones.txt" "codigo_fuente.txt" "output.html")
+
+ 
