@@ -5,6 +5,7 @@
 ;(require racket/regexp)
 (require racket/file)
 (require racket/contract)
+
 ; Función auxiliar para generar colores aleatorios
 (define/contract (generate-color)
   (-> string?)
@@ -47,13 +48,20 @@
 
 ; Función principal para resaltar léxico
 (define (resaltador regex-file source-file output-file)
-  (let* ((regex-list (file->lines regex-file))
-         (source-code (file->lines source-file))
-         (tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code))))
-    ; Escribir el HTML generado en el archivo de salida
-    (with-output-to-file output-file
-      (lambda ()
-        (display (generate-html tokens regex-list))))))
+  (define (read-regex-file file)
+    (file->lines file))
 
+  (define (read-source-file file)
+    (file->lines file))
+
+  (define regex-list (read-regex-file regex-file))
+  (define source-code (read-source-file source-file))
+  (define tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code)))
+
+  ; Escribir el HTML generado en el archivo de salida
+  (with-output-to-file output-file
+    (lambda ()
+      (display (generate-html tokens regex-list)))))
+  
 ; Llamar a la función principal con los archivos de entrada y salida
 (resaltador "expresiones.txt" "codigo_fuente.txt" "output.html")
