@@ -1,0 +1,14 @@
+^[0-9]+[0-9]*        ; Enteros
+^[0-9]*\.[0-9]+      ; Flotantes
+^=                   ; Asignación
+^\+                  ; Suma
+^-                   ; Resta
+^\*                  ; Multiplicación
+^/                   ; División
+^5                   ; 5
+\^                   ; Potencia
+^[a-zA-Z][a-zA-Z0-9]*; Identificadores
+^\(                  ; Paréntesis izquierdo
+^\)                  ; Paréntesis derecho
+^;.*                 ; Comentarios
+^\s                  ; Separadores
