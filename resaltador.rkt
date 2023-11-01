@@ -33,23 +33,22 @@
   (string-append
    "<!DOCTYPE html>\n<html>\n<head>\n<style>\n"
    ; Generar estilos CSS
-   (string-append
-    "body {font-family: monospace; white-space: pre;}\n"
-    (apply string-append
-           (map (lambda (_) (format ".~a {color: ~a;}\n" (generate-color) (generate-color)))
-                regex-list)))
+   "body {font-family: monospace; white-space: pre;}\n"
+   (format ".header {font-size: 24px;}\n")
+   (apply string-append
+          (map (lambda (_) (format ".~a {color: ~a;}\n" (generate-color) (generate-color)))
+               regex-list))
    "</style>\n</head>\n<body>\n"
+   ; Encabezado
+   "<div class=\"header\">Resaltador de sintaxis</div>\n"
    ; Generar cuerpo del HTML con los tokens
    (string-join (map (lambda (token)
-                       (format "<span style=\"color: ~a;\">~a</span>"
-                               (cdr token) (car token)))
+                       (format "<span class=\"~a\">~a</span>"
+                               (generate-color) (cdr token)))
                      tokens)
                 "\n")
    "\n</body>\n</html>"))
 
-; Función auxiliar para leer un archivo y devolver sus líneas
-(define (read-lines file)
-  (file->lines file))
 
 ; Función principal para resaltar léxico
 (define (resaltador regex-file source-file output-file)
@@ -57,12 +56,12 @@
   (define source-code (read-lines source-file))
   (define tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code)))
 
-  ; Escribir el HTML generado en el archivo de salida
+ ; Escribir el HTML generado en el archivo de salida
   (with-output-to-file output-file
     (lambda ()
       (display (generate-html tokens regex-list)))))
 
+
 ; Llamar a la función principal con los archivos de entrada y salida
 (resaltador "expresiones.txt" "codigo_fuente.txt" "output.html")
 
- 
