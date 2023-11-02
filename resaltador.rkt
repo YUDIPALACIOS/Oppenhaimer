@@ -1,67 +1,66 @@
-;; The first three lines of this file were inserted by DrRacket. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
 #lang racket
-; Importar módulos necesarios
-;(require racket/regexp)
-(require racket/file)
-(require racket/contract)
+(require racket/format)
 
-; Función auxiliar para generar colores aleatorios
-(define/contract (generate-color)
-  (-> string?)
-  (format "#~x~x~x" (random 256) (random 256) (random 256)))
-
-; Función auxiliar para tokenizar una línea de código
-(define (match-token regex line color)
-  (let ((match (regexp-match regex line)))
-    (if match
-        (cons (car match) color)
-        (cons (substring line 0 1) color))))
-
-; Función principal para tokenizar una línea de código
-(define (tokenize line regex-list)
-  (define (loop line tokens regex-list)
-    (if (null? regex-list)
-        (reverse tokens)
-        (let* ((token (match-token (car regex-list) line (generate-color)))
-               (next-line (substring line (if token (string-length (car token)) 1))))
-          (loop next-line (cons token tokens) (cdr regex-list)))))
-  (loop line '() regex-list))  ; Start the recursion with an empty list of tokens and the full regex-list; Start the recursion with an empty list of tokens
-
-; Función auxiliar para generar HTML con la información de los tokens
-(define (generate-html tokens regex-list)
-  (string-append
-   "<!DOCTYPE html>\n<html>\n<head>\n<style>\n"
-   ; Generar estilos CSS
-   "body {font-family: monospace; white-space: pre;}\n"
-   (format ".header {font-size: 24px;}\n")
-   (apply string-append
-          (map (lambda (_) (format ".~a {color: ~a;}\n" (generate-color) (generate-color)))
-               regex-list))
-   "</style>\n</head>\n<body>\n"
-   ; Encabezado
-   "<div class=\"header\">Resaltador de sintaxis</div>\n"
-   ; Generar cuerpo del HTML con los tokens
-   (string-join (map (lambda (token)
-                       (format "<span class=\"~a\">~a</span>"
-                               (generate-color) (cdr token)))
-                     tokens)
-                "\n")
-   "\n</body>\n</html>"))
-
-
-; Función principal para resaltar léxico
-(define (resaltador regex-file source-file output-file)
-  (define regex-list (read-lines regex-file))
-  (define source-code (read-lines source-file))
-  (define tokens (apply append (map (lambda (line) (tokenize line regex-list)) source-code)))
-
- ; Escribir el HTML generado en el archivo de salida
+(define (write-html output-file output-str)
   (with-output-to-file output-file
+    #:mode 'text 
+    #:exists 'append
     (lambda ()
-      (display (generate-html tokens regex-list)))))
+      (displayln output-str))))
 
+(define (analize-regexp file)
+  (with-input-from-file file
+    (lambda ()
+      (let loop ((lines (port->lines (current-input-port))) (result '()))
+        (cond
+          ((null? lines) (reverse result))
+          (else
+            (let* ((line (car lines))
+                   (pair (string-split line ","))
+                   (color (format "#~x~x~x" (random 256) (random 256) (random 256))))
+              (loop (cdr lines) (cons (cons (car pair) color) result)))))))))
 
-; Llamar a la función principal con los archivos de entrada y salida
-(resaltador "expresiones.txt" "codigo_fuente.txt" "output.html")
+(define (regexp-matcher exp-list line html-file)
+  (if (not (string=? line ""))
+      (let loop ((list exp-list) (line line))
+        (define regex (car (car list)))
+        (define color (cdr (car list)))
+        
+        (cond
+          [(null? list) (displayln "Error: Lista vacia, no se detectaron expresiones regulares")]
+          [(regexp-match regex line)
+            (begin
+              (write-html html-file (format "<span style=\"color: ~a;\">~a</span>" color (car (regexp-match regex line))))
+              (regexp-matcher exp-list (substring line (string-length (car (regexp-match regex line)))) html-file))]
+          [(null? (cdr list)) (write-html html-file (format "<span style=\"color: #FF0000;\">:ERROR, no se reconoce la expresion ~a</span>" line))]
+          [else (loop (cdr list) line)]))
+    (displayln "")))
 
+(define (syntax-highlight regexp-file input-file output-file)
+  (define exp-list (analize-regexp regexp-file))
+  
+  (define (write-html-body)
+    (write-html output-file "<html><body>")
+    (write-html output-file "<h1><center>Actividad Integradora 3.4 Resaltador de sintaxis</center></h1>")
+    (write-html output-file "<h2><center>Sebastián Rosas Maciel - A01233989</center></h2>")
+    (with-input-from-file input-file
+      (lambda ()
+        (let loop ((line (read-line)))
+          (cond
+            [(eof-object? line) (void)]
+            [else
+              (write-html output-file "<div style=\"display: block;\">")
+              (regexp-matcher exp-list line output-file)
+              (write-html output-file "</div>")
+              (write-html output-file " ")
+              (loop (read-line))]))))
+    (write-html output-file "</body></html>")
+    )
+  
+  (if (file-exists? output-file)
+      (write-html-body)
+      (begin
+        (write-html output-file "<html><body></body></html>")
+        (write-html-body))))
+
+(syntax-highlight "expresiones.txt" "codigo_fuente.txt" "output.html")

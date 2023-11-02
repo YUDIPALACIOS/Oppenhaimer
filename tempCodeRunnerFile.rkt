@@ -1,1 +1,12 @@
-000000
+(define (tokenize line regex-color-list)
+  (define (loop line tokens regex-color-list)
+    (if (null? regex-color-list)
+        (if (string=? line "")
+            (reverse tokens)
+            (loop (substring line 1) (cons (cons (substring line 0 1) "black") tokens) regex-color-list))
+        (let* ((regex-color (car regex-color-list))
+               (token (match-token (car regex-color) line (cdr regex-color))))
+          (if token
+              (loop (substring line (string-length (car token))) (cons token tokens) regex-color-list)
+              (loop line tokens (cdr regex-color-list))))))
+  (loop line '() regex-color-list))
